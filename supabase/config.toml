@@ -1,0 +1,27 @@
+# Minimal Supabase config for The Easy English — Phase 1 (DB enforcement layer only).
+# Enough to run `supabase start`, `supabase db reset`, and `supabase test db`.
+# No app/UI config here on purpose — Phase 1 is DB-first.
+
+project_id = "the-easy-english"
+
+[db]
+port = 54322
+major_version = 15
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+# No public self-signup — only an admin can create accounts (Auth Admin API).
+enable_signup = false
+
+[studio]
+enabled = true
+
+[api]
+enabled = true
+schemas = ["public"]
+extra_search_path = ["public", "extensions"]
