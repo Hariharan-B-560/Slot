@@ -43,12 +43,17 @@ alter table public.enrolments
 -- --- RULE 7: no double-book --------------------------------------------------
 -- No two ACTIVE enrolments may share the same (teacher, slot_start) on any
 -- overlapping weekday.
+-- NOTE: intarray's opclass AND its int[] '&&' operator are schema-qualified.
+-- Locally `extensions` sits in the search_path so bare names resolve, but
+-- Supabase Cloud runs migrations without it — leaving `gist__int_ops` unfound
+-- and `&&` binding to the built-in anyarray operator instead. Qualifying both
+-- is what makes this migration portable.
 alter table public.enrolments
   add constraint enrolments_no_double_book
   exclude using gist (
     teacher_id with =,
     slot_start with =,
-    weekdays gist__int_ops with &&
+    weekdays extensions.gist__int_ops with operator(extensions.&&)
   ) where (status = 'active');
 
 -- --- One active enrolment per (student, teacher, weekday) ---------------------
@@ -57,7 +62,7 @@ alter table public.enrolments
   exclude using gist (
     student_id with =,
     teacher_id with =,
-    weekdays gist__int_ops with &&
+    weekdays extensions.gist__int_ops with operator(extensions.&&)
   ) where (status = 'active');
 
 -- --- Rewrite generation to the weekdays[] + session_minutes model ------------
