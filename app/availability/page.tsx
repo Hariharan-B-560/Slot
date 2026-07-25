@@ -18,6 +18,7 @@ type RawSlot = {
   occupant_duration: number | null;
   student_name: string | null;
   enrolment_id: string | null;
+  occupant_paused: boolean | null;
 };
 
 const hhmm = (t: string) => t.slice(0, 5);
@@ -88,6 +89,7 @@ export default async function AvailabilityPage({
             enrolmentId: s.enrolment_id ?? "",
             occupantDuration: s.occupant_duration ?? 30,
             isOccupantStart: s.is_occupant_start,
+            paused: s.occupant_paused ?? false,
             fits30: false,
             fits60: false,
           };

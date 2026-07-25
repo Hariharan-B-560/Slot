@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/current-user";
 import { AppShell } from "@/components/AppShell";
-import { totalSessions, remaining, type Enrolment } from "@/lib/roster";
+import { totalSessions, remaining, shortDate, type Enrolment } from "@/lib/roster";
 import { hhmm } from "@/lib/weekday";
 import {
   Table,
@@ -19,6 +19,8 @@ export const dynamic = "force-dynamic";
 type EnrolRow = Enrolment & {
   id: string;
   student_id: string;
+  status: string;
+  paused_at: string | null;
   migrated_from_legacy: boolean;
   teacher: { name: string } | null;
 };
@@ -34,9 +36,9 @@ export default async function RosterPage() {
     supabase
       .from("enrolments")
       .select(
-        "id, student_id, slot_start, start_date, end_date, total_sessions, sessions_already_delivered, migrated_from_legacy, teacher:profiles!enrolments_teacher_id_fkey(name)",
+        "id, student_id, slot_start, start_date, end_date, total_sessions, sessions_already_delivered, migrated_from_legacy, status, paused_at, teacher:profiles!enrolments_teacher_id_fkey(name)",
       )
-      .eq("status", "active"),
+      .in("status", ["active", "paused"]),
     supabase.from("classes").select("enrolment_id, status").not("enrolment_id", "is", null),
   ]);
 
@@ -95,6 +97,11 @@ export default async function RosterPage() {
                     {e?.migrated_from_legacy && (
                       <Badge variant="outline" className="ml-2 align-middle text-[10px]">
                         Migrated
+                      </Badge>
+                    )}
+                    {e?.status === "paused" && (
+                      <Badge className="ml-2 align-middle bg-amber-500 text-[10px] text-white hover:bg-amber-500">
+                        PAUSED{e.paused_at ? ` · ${shortDate(e.paused_at.slice(0, 10))}` : ""}
                       </Badge>
                     )}
                     {paymentPending && (

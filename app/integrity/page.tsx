@@ -7,6 +7,7 @@ import { parseRange } from "@/lib/date-range";
 import { fmtIST } from "@/lib/datetime";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { TeacherPayTable, type PayRow } from "@/components/integrity/TeacherPayTable";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,7 @@ export default async function IntegrityPage({
   const range = parseRange(sp);
   const supabase = await createClient();
 
-  const [byTeacher, flagged] = await Promise.all([
+  const [byTeacher, flagged, pay] = await Promise.all([
     supabase.rpc("integrity_by_teacher", { p_start: range.from, p_end: range.to }),
     supabase
       .from("classes")
@@ -44,9 +45,11 @@ export default async function IntegrityPage({
       .lt("scheduled_start", range.to + "T23:59:59")
       .order("scheduled_start", { ascending: false })
       .limit(10),
+    supabase.rpc("teacher_pay_all", { p_from: range.from, p_to: range.to }),
   ]);
 
   const rows = (byTeacher.data ?? []) as Row[];
+  const payRows = (pay.data ?? []) as PayRow[];
   const flaggedRows = (flagged.data ?? []) as unknown as {
     id: string;
     scheduled_start: string;
@@ -114,6 +117,19 @@ export default async function IntegrityPage({
             )}
           </TableBody>
         </Table>
+      </div>
+
+      <div className="mb-2 flex items-baseline justify-between gap-4">
+        <h2 className="text-sm font-semibold">Teacher pay</h2>
+        <span className="text-xs text-muted-foreground">Verified classes only · what&apos;s owed for this range</span>
+      </div>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Pay counts 30-min atoms (a 60-min class is 2) on <strong>verified</strong> classes — delivered-but-unverified
+        pays nothing. Uses each teacher&apos;s current rate; recent rate changes may need a manual adjustment for
+        classes verified before the change. Excel export (Teacher Pay sheet) arrives with the export batch.
+      </p>
+      <div className="mb-8">
+        <TeacherPayTable rows={payRows} />
       </div>
 
       <h2 className="mb-3 text-sm font-semibold">Recent flagged classes</h2>

@@ -64,12 +64,13 @@ select throws_ok(
   'RULE 8: a second active enrolment for the same (student, teacher) is rejected'
 );
 
--- TEST 6 — an INACTIVE enrolment does not reserve the range (EXCLUDE is active-only).
+-- TEST 6 — an ENDED enrolment does not reserve the range (EXCLUDE covers only
+-- active + paused; ended is terminal and releases the slot).
 select lives_ok(
   $$ insert into public.enrolments (student_id, teacher_id, conversion_event_id, slot_start, duration_minutes, start_date, total_sessions, status)
      values ('00000000-0000-0000-0000-0000000000a3','00000000-0000-0000-0000-000000000b02',
-             '00000000-0000-0000-0000-0000000000c3','17:00', 60, current_date, 4, 'cancelled') $$,
-  'an inactive enrolment may overlap an active one'
+             '00000000-0000-0000-0000-0000000000c3','17:00', 60, current_date, 4, 'ended') $$,
+  'an ended enrolment may overlap an active one'
 );
 
 -- === available_slots reflects the DB truth (Teacher Two) ====================

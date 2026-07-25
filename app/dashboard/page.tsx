@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/current-user";
 import { AppShell } from "@/components/AppShell";
 import { DateRangeControl } from "@/components/DateRangeControl";
-import { AttentionLists, type Renewal, type Risk, type Backlog } from "@/components/dashboard/AttentionLists";
+import { AttentionLists, type Renewal, type Risk, type Backlog, type LongPaused } from "@/components/dashboard/AttentionLists";
 import { UtilisationChart, type UtilisationRow } from "@/components/UtilisationChart";
 import { TrendChart, type TrendRow } from "@/components/dashboard/TrendChart";
 import { parseRange, previousRange, previousLabel, delta } from "@/lib/date-range";
@@ -59,7 +59,7 @@ export default async function DashboardPage({
   const prev = previousRange(range);
   const supabase = await createClient();
 
-  const [now, before, renewalsRes, risksRes, backlogRes, integrityRes, moneyRes, utilRes, trendRes] =
+  const [now, before, renewalsRes, risksRes, backlogRes, integrityRes, moneyRes, utilRes, trendRes, longPausedRes] =
     await Promise.all([
       supabase.rpc("dashboard_headline", { p_start: range.from, p_end: range.to }),
       supabase.rpc("dashboard_headline", { p_start: prev.from, p_end: prev.to }),
@@ -70,6 +70,7 @@ export default async function DashboardPage({
       supabase.rpc("dashboard_money", { p_start: range.from, p_end: range.to }),
       supabase.rpc("dashboard_utilisation", { p_start: range.from, p_end: range.to }),
       supabase.rpc("dashboard_trend", { p_start: range.from, p_end: range.to }),
+      supabase.rpc("dashboard_long_paused"),
     ]);
 
   const zero: Headline = { utilisation: 0, delivered: 0, verified: 0, active_students: 0 };
@@ -85,6 +86,7 @@ export default async function DashboardPage({
   const money = ((moneyRes.data ?? [])[0] as Money) ?? { received: 0, outstanding: 0, arrears: 0 };
   const util = (utilRes.data ?? []) as UtilisationRow[];
   const trend = (trendRes.data ?? []) as TrendRow[];
+  const longPaused = (longPausedRes.data ?? []) as LongPaused[];
 
   const vs = previousLabel(range);
   const utilPct = Math.round(Number(h.utilisation) * 100);
@@ -113,7 +115,7 @@ export default async function DashboardPage({
       {/* 2 — Who needs attention */}
       <h2 className="mb-3 text-sm font-semibold">Who needs attention</h2>
       <div className="mb-8">
-        <AttentionLists renewals={renewals} risks={risks} backlog={backlog} />
+        <AttentionLists renewals={renewals} risks={risks} backlog={backlog} longPaused={longPaused} />
       </div>
 
       {/* 3 — Performance charts (both driven by the selected range) */}

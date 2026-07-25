@@ -8,6 +8,7 @@ import { shortDate } from "@/lib/roster";
 export type Renewal = { student_id: string; student: string; teacher: string; sessions_left: number; phone: string | null };
 export type Risk = { student_id: string; student: string; teacher: string; last_class_at: string | null };
 export type Backlog = { cnt: number; oldest: string | null };
+export type LongPaused = { student_id: string; student: string; teacher: string; days_paused: number };
 
 function Panel({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
   return (
@@ -27,13 +28,15 @@ export function AttentionLists({
   renewals,
   risks,
   backlog,
+  longPaused,
 }: {
   renewals: Renewal[];
   risks: Risk[];
   backlog: Backlog;
+  longPaused: LongPaused[];
 }) {
   return (
-    <div className="flex flex-col gap-4 lg:flex-row">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
       <Panel title="Renewal window" hint="3 or fewer sessions left — call to renew">
         {renewals.length === 0 ? (
           <Empty>No students need renewal calls this week ✓</Empty>
@@ -82,6 +85,24 @@ export function AttentionLists({
               oldest {backlog.oldest ? shortDate(backlog.oldest.slice(0, 10)) : "—"} · go to Verify →
             </div>
           </Link>
+        )}
+      </Panel>
+
+      <Panel title="Long paused" hint="Paused more than 30 days">
+        {longPaused.length === 0 ? (
+          <Empty>No long-paused enrolments ✓</Empty>
+        ) : (
+          <ul className="space-y-1.5 text-sm">
+            {longPaused.slice(0, 8).map((r) => (
+              <li key={r.student_id}>
+                <Link href={`/roster/${r.student_id}`} className="flex items-baseline gap-2 hover:underline">
+                  <span className="font-medium">{r.student}</span>
+                  <span className="text-xs text-muted-foreground">{r.teacher}</span>
+                  <span className="ml-auto shrink-0 text-xs tabular-nums text-amber-600">{r.days_paused}d</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
       </Panel>
     </div>

@@ -166,7 +166,11 @@ function ReportForm({ row, onDone }: { row: ClassRow; onDone: () => void }) {
 
       <div className="flex flex-col gap-1.5">
         <Label>Attendance</Label>
-        <Select value={attendance} onValueChange={(v) => v && setAttendance(v as typeof attendance)}>
+        <Select
+          items={{ present: "Present", late: "Late", absent: "Absent" }}
+          value={attendance}
+          onValueChange={(v) => v && setAttendance(v as typeof attendance)}
+        >
           <SelectTrigger className="w-40">
             <SelectValue />
           </SelectTrigger>

@@ -17,7 +17,7 @@ import { createStudent } from "@/app/students/manage-actions";
 import { toast } from "sonner";
 import { fmtIST } from "@/lib/datetime";
 import { shortDate } from "@/lib/roster";
-import { COURSES, courseLabel, type Course } from "@/lib/courses";
+import { COURSES, COURSE_ITEMS, courseLabel, type Course } from "@/lib/courses";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +32,7 @@ export type Cell = {
   enrolmentId?: string;
   occupantDuration?: number; // 30 | 60 — for span rendering
   isOccupantStart?: boolean; // first atom of the occupying enrolment
+  paused?: boolean; // occupant enrolment is paused — held but inactive
   fits30: boolean;
   fits60: boolean;
 };
@@ -268,8 +269,17 @@ export function TimelineBoard({
                       ? "bg-primary text-primary-foreground cursor-pointer hover:z-10 hover:scale-[1.03] hover:brightness-110 active:scale-[0.97]"
                       : "bg-primary/25 text-primary-foreground/70 cursor-pointer";
                   } else if (c.kind === "taken") {
-                    cls = "bg-muted text-muted-foreground cursor-pointer";
-                    inner = <span className="truncate">{c.studentName}</span>;
+                    // Paused = held but inactive → muted + diagonal stripes so it
+                    // reads as occupied-but-paused at a glance (flat, no blur).
+                    cls = c.paused
+                      ? "cursor-pointer border border-dashed border-amber-300 bg-[repeating-linear-gradient(45deg,var(--muted),var(--muted)_5px,transparent_5px,transparent_10px)] text-muted-foreground/70"
+                      : "bg-muted text-muted-foreground cursor-pointer";
+                    inner = (
+                      <span className="truncate">
+                        {c.studentName}
+                        {c.paused && <span className="ml-1 text-[9px] uppercase text-amber-600">paused</span>}
+                      </span>
+                    );
                   } else if (t.canEdit) {
                     cls =
                       "cursor-pointer border border-dashed border-border bg-muted/20 text-muted-foreground/40 hover:border-primary/60 hover:bg-primary/5 hover:text-primary";
@@ -282,7 +292,7 @@ export function TimelineBoard({
                         ? `Free — fits a ${duration}`
                         : `Free — no room for a ${duration} here`
                       : c.kind === "taken"
-                        ? `${c.studentName} (${c.occupantDuration} min)`
+                        ? `${c.studentName} (${c.occupantDuration} min)${c.paused ? " — paused, slot held" : ""}`
                         : "Not published — click to publish";
 
                   return (
@@ -637,7 +647,11 @@ function PlacementForm({
 
       <div className="flex flex-col gap-1.5">
         <Label>Student</Label>
-        <Select value={studentId} onValueChange={(v) => v && setStudentId(v)}>
+        <Select
+          items={Object.fromEntries(list.map((s) => [s.id, s.name]))}
+          value={studentId}
+          onValueChange={(v) => v && setStudentId(v)}
+        >
           <SelectTrigger>
             <SelectValue placeholder="Choose a student" />
           </SelectTrigger>
@@ -666,7 +680,7 @@ function PlacementForm({
         <>
           <div className="flex flex-col gap-1.5">
             <Label>Course</Label>
-            <Select value={course} onValueChange={(v) => v && setCourse(v as Course)}>
+            <Select items={COURSE_ITEMS} value={course} onValueChange={(v) => v && setCourse(v as Course)}>
               <SelectTrigger className="w-48">
                 <SelectValue />
               </SelectTrigger>

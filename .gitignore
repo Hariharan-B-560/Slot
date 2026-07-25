@@ -9,3 +9,6 @@ next-env.d.ts
 
 # build artifacts
 tsconfig.tsbuildinfo
+
+# supabase local CLI cache
+supabase/.temp/

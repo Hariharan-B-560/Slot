@@ -93,7 +93,7 @@ select is(
 
 -- === CASE 4 — half-open: a booking ENDING 18:00 does not block an 18:00 start
 -- Window 17:00–19:00; booked 17:00–18:00 (60) only → 18:00 IS a valid 60 start.
-update public.enrolments set status = 'cancelled'
+update public.enrolments set status = 'ended'
  where id in ('00000000-0000-0000-0000-0000000000e5', '00000000-0000-0000-0000-0000000000e6');
 delete from public.availability_blocks
  where teacher_id = '00000000-0000-0000-0000-000000000b02';

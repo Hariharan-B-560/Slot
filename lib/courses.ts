@@ -17,3 +17,9 @@ export function courseLabel(course: string | null | undefined): string {
   if (!course) return "";
   return (COURSE_LABELS as Record<string, string>)[course] ?? course;
 }
+
+/**
+ * value → label map for base-ui `<Select items={...}>` so the trigger shows the
+ * course NAME, not the raw enum value.
+ */
+export const COURSE_ITEMS: Record<string, string> = COURSE_LABELS;

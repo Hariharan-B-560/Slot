@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/current-user";
 import { AppShell } from "@/components/AppShell";
 import { PaymentsPanel, type PaymentRow, type PaymentStatus } from "@/components/roster/PaymentsPanel";
+import { PauseControl } from "@/components/roster/PauseControl";
+import { SlotChangeControl } from "@/components/roster/SlotChangeControl";
 import { totalSessions, remaining, type Enrolment } from "@/lib/roster";
 import { hhmm } from "@/lib/weekday";
 import { fmtIST } from "@/lib/datetime";
@@ -50,7 +52,7 @@ export default async function StudentDetailPage({
     supabase
       .from("enrolments")
       .select(
-        "id, slot_start, start_date, end_date, total_sessions, sessions_already_delivered, migrated_from_legacy, status, teacher:profiles!enrolments_teacher_id_fkey(name)",
+        "id, slot_start, start_date, end_date, total_sessions, sessions_already_delivered, migrated_from_legacy, status, paused_at, teacher:profiles!enrolments_teacher_id_fkey(name)",
       )
       .eq("student_id", studentId)
       .order("start_date", { ascending: false }),
@@ -64,6 +66,7 @@ export default async function StudentDetailPage({
   const enrolRows = (enrols ?? []) as unknown as (Enrolment & {
     id: string;
     status: string;
+    paused_at: string | null;
     migrated_from_legacy: boolean;
     teacher: { name: string } | null;
   })[];
@@ -166,6 +169,23 @@ export default async function StudentDetailPage({
                           <strong>{left} remaining</strong>
                         </>
                       )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center">
+                      <PauseControl
+                        enrolmentId={e.id}
+                        status={e.status}
+                        pausedAt={e.paused_at}
+                        student={student.name}
+                        teacher={e.teacher?.name ?? "their teacher"}
+                      />
+                      <SlotChangeControl
+                        enrolmentId={e.id}
+                        status={e.status}
+                        currentSlot={e.slot_start}
+                        student={student.name}
+                        teacher={e.teacher?.name ?? "their teacher"}
+                      />
                     </div>
 
                     <PaymentsPanel

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { importLegacyStudent } from "@/app/students/import-actions";
 import { toast } from "sonner";
 import { shortDate } from "@/lib/roster";
-import { COURSES, courseLabel, type Course } from "@/lib/courses";
+import { COURSES, COURSE_ITEMS, courseLabel, type Course } from "@/lib/courses";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -80,7 +80,7 @@ export function ImportLegacyForm({ teachers, today }: { teachers: Teacher[]; tod
         </Field>
 
         <Field label="Course">
-          <Select value={course} onValueChange={(v) => v && setCourse(v as Course)}>
+          <Select items={COURSE_ITEMS} value={course} onValueChange={(v) => v && setCourse(v as Course)}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -94,7 +94,11 @@ export function ImportLegacyForm({ teachers, today }: { teachers: Teacher[]; tod
           </Select>
         </Field>
         <Field label="Teacher">
-          <Select value={teacherId} onValueChange={(v) => v && setTeacherId(v)}>
+          <Select
+            items={Object.fromEntries(teachers.map((t) => [t.id, t.name]))}
+            value={teacherId}
+            onValueChange={(v) => v && setTeacherId(v)}
+          >
             <SelectTrigger>
               <SelectValue placeholder="Choose a teacher" />
             </SelectTrigger>
@@ -112,7 +116,11 @@ export function ImportLegacyForm({ teachers, today }: { teachers: Teacher[]; tod
           <Input type="time" step={1800} value={slotStart} onChange={(e) => setSlotStart(e.target.value)} />
         </Field>
         <Field label="Session length">
-          <Select value={String(duration)} onValueChange={(v) => v && setDuration(Number(v) as 30 | 60)}>
+          <Select
+            items={{ "30": "30 min", "60": "60 min" }}
+            value={String(duration)}
+            onValueChange={(v) => v && setDuration(Number(v) as 30 | 60)}
+          >
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
