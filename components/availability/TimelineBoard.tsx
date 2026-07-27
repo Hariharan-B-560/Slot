@@ -58,6 +58,7 @@ export function TimelineBoard({
   students,
   showNames,
   linkTeachers = false,
+  readOnly = false,
 }: {
   axis: string[];
   teachers: TeacherRow[];
@@ -65,6 +66,7 @@ export function TimelineBoard({
   students: { id: string; name: string }[];
   showNames: boolean;
   linkTeachers?: boolean;
+  readOnly?: boolean;
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -480,9 +482,11 @@ export function TimelineBoard({
                 <div className="rounded-md border bg-muted/30 p-3">
                   <div className="mb-1 flex items-center justify-between">
                     <p className="text-xs font-medium uppercase text-muted-foreground">Payments</p>
-                    <a href={`/roster/${detail.studentId}`} className="text-xs text-primary underline">
-                      Manage in roster →
-                    </a>
+                    {!readOnly && (
+                      <a href={`/roster/${detail.studentId}`} className="text-xs text-primary underline">
+                        Manage in roster →
+                      </a>
+                    )}
                   </div>
                   <div className="flex flex-wrap gap-x-6 gap-y-1">
                     <span>

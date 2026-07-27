@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
-export type Profile = { id: string; name: string; role: "admin" | "teacher" };
+export type Profile = { id: string; name: string; role: "admin" | "teacher" | "counsellor" };
 
 /**
  * The signed-in user's profile (id, name, role), or null if not signed in.

@@ -33,6 +33,11 @@ values
    'authenticated', 'authenticated', 'teacher2@theeasyenglish.test',
    crypt('password', gen_salt('bf')), now(), now(), now(),
    '{"provider":"email","providers":["email"]}', '{}',
+   '', '', '', '', '', ''),
+  ('00000000-0000-0000-0000-000000000000', '00000000-0000-0000-0000-000000000d01',
+   'authenticated', 'authenticated', 'counsellor@theeasyenglish.test',
+   crypt('password', gen_salt('bf')), now(), now(), now(),
+   '{"provider":"email","providers":["email"]}', '{}',
    '', '', '', '', '', '')
 on conflict (id) do nothing;
 
@@ -41,9 +46,10 @@ on conflict (id) do nothing;
 -- must_change_password = false: seeded accounts are ready to use (the column
 -- defaults true so ADMIN-created accounts are forced to change on first login).
 insert into public.profiles (id, name, role, email, must_change_password) values
-  ('00000000-0000-0000-0000-000000000a01', 'Admin One',   'admin',   'admin@theeasyenglish.test',    false),
-  ('00000000-0000-0000-0000-000000000b01', 'Teacher One', 'teacher', 'teacher1@theeasyenglish.test', false),
-  ('00000000-0000-0000-0000-000000000b02', 'Teacher Two', 'teacher', 'teacher2@theeasyenglish.test', false)
+  ('00000000-0000-0000-0000-000000000a01', 'Admin One',     'admin',      'admin@theeasyenglish.test',      false),
+  ('00000000-0000-0000-0000-000000000b01', 'Teacher One',   'teacher',    'teacher1@theeasyenglish.test',   false),
+  ('00000000-0000-0000-0000-000000000b02', 'Teacher Two',   'teacher',    'teacher2@theeasyenglish.test',   false),
+  ('00000000-0000-0000-0000-000000000d01', 'Counsellor One', 'counsellor', 'counsellor@theeasyenglish.test', false)
 on conflict (id) do nothing;
 
 -- --- students (data records, NO login) ---------------------------------------

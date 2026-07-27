@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
   const { data: profile } = await supabase
     .from("profiles")
-    .select("active, must_change_password")
+    .select("active, must_change_password, role")
     .eq("id", user!.id)
     .maybeSingle();
 
@@ -25,6 +25,8 @@ export async function POST(request: NextRequest) {
     return seeOther(request, "/login", { error: "This account is not active. Contact your admin." });
   }
 
-  const dest = profile.must_change_password ? "/change-password" : "/availability";
+  // Counsellors live in their own read-only area; everyone else lands on availability.
+  const home = profile.role === "counsellor" ? "/counsellor/availability" : "/availability";
+  const dest = profile.must_change_password ? "/change-password" : home;
   return withCookies(seeOther(request, dest), bag);
 }

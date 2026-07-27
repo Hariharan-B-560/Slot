@@ -48,6 +48,11 @@ const TEACHER_NAV: NavItem[] = [
   { href: "/classes", label: "Class history", icon: CalendarDays },
   { href: "/students", label: "My students", icon: GraduationCap },
 ];
+// Counsellor is read-only: just the two viewing screens, under /counsellor.
+const COUNSELLOR_NAV: NavItem[] = [
+  { href: "/counsellor/availability", label: "Availability", icon: LayoutGrid },
+  { href: "/counsellor/students", label: "Students", icon: GraduationCap },
+];
 
 /**
  * The app frame: brand + sidebar navigation (role-aware, active-state) and a
@@ -69,7 +74,8 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  const items = profile.role === "admin" ? ADMIN_NAV : TEACHER_NAV;
+  const items =
+    profile.role === "admin" ? ADMIN_NAV : profile.role === "counsellor" ? COUNSELLOR_NAV : TEACHER_NAV;
   const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/");
   // Pending-verify count for the nav badge — admin only (teachers have no
   // Verify item, and the hook stays inert / query-free when disabled).

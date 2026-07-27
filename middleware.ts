@@ -70,7 +70,19 @@ export async function middleware(request: NextRequest) {
   }
 
   // --- Normal, active session ------------------------------------------------
+  const counsellorArea = path === "/counsellor" || path.startsWith("/counsellor/");
+
+  // Counsellors are read-only and confined to their own area. Anything else
+  // (login page while signed in, an admin/teacher route) sends them home.
+  if (profile.role === "counsellor") {
+    if (!counsellorArea) return redirect(request, "/counsellor/availability", response);
+    return response;
+  }
+
   if (isPublic) return redirect(request, "/availability", response); // already signed in
+
+  // The counsellor area is off-limits to admins and teachers.
+  if (counsellorArea) return redirect(request, "/availability", response);
 
   const adminOnly = ADMIN_PREFIXES.some((p) => path === p || path.startsWith(p + "/"));
   if (adminOnly && profile.role !== "admin") {

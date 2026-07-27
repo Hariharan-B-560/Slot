@@ -27,12 +27,16 @@ import {
 type Status = (typeof STUDENT_STATUSES)[number];
 type Student = { id: string; name: string; phone: string | null; status: string };
 
-export function StudentManager({ students }: { students: Student[] }) {
+// `readOnly` powers the counsellor view: the add form and per-row Edit are gone,
+// leaving a searchable, read-only list. Admins get the full CRUD surface (plus
+// the same search).
+export function StudentManager({ students, readOnly = false }: { students: Student[]; readOnly?: boolean }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [status, setStatus] = useState<Status>("lead");
+  const [query, setQuery] = useState("");
 
   function add() {
     setError(null);
@@ -47,39 +51,58 @@ export function StudentManager({ students }: { students: Student[] }) {
     });
   }
 
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? students.filter(
+        (s) =>
+          s.name.toLowerCase().includes(q) ||
+          (s.phone ?? "").toLowerCase().includes(q) ||
+          s.status.toLowerCase().includes(q),
+      )
+    : students;
+
   return (
     <div className="space-y-6">
-      <Card>
-        <CardContent className="flex flex-wrap items-end gap-3 pt-6">
-          <div className="flex flex-col gap-1.5">
-            <Label>Name</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className="w-48" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Phone</Label>
-            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91…" className="w-40" />
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label>Status</Label>
-            <Select value={status} onValueChange={(v) => v && setStatus(v as Status)}>
-              <SelectTrigger className="w-40">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {STUDENT_STATUSES.map((s) => (
-                  <SelectItem key={s} value={s}>
-                    {s}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <Button onClick={add} disabled={pending || !name.trim()}>
-            {pending ? "Adding…" : "Add student"}
-          </Button>
-          {error && <p className="w-full text-sm text-destructive">{error}</p>}
-        </CardContent>
-      </Card>
+      {!readOnly && (
+        <Card>
+          <CardContent className="flex flex-wrap items-end gap-3 pt-6">
+            <div className="flex flex-col gap-1.5">
+              <Label>Name</Label>
+              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Full name" className="w-48" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Phone</Label>
+              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+91…" className="w-40" />
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label>Status</Label>
+              <Select value={status} onValueChange={(v) => v && setStatus(v as Status)}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STUDENT_STATUSES.map((s) => (
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={add} disabled={pending || !name.trim()}>
+              {pending ? "Adding…" : "Add student"}
+            </Button>
+            {error && <p className="w-full text-sm text-destructive">{error}</p>}
+          </CardContent>
+        </Card>
+      )}
+
+      <Input
+        value={query}
+        onChange={(e) => setQuery(e.target.value)}
+        placeholder="Search by name, phone, or status…"
+        className="max-w-xs"
+      />
 
       <div className="overflow-x-auto rounded-lg border">
         <Table>
@@ -88,13 +111,19 @@ export function StudentManager({ students }: { students: Student[] }) {
               <TableHead>Name</TableHead>
               <TableHead>Phone</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-32 text-right">Edit</TableHead>
+              {!readOnly && <TableHead className="w-32 text-right">Edit</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
-            {students.map((s) => (
-              <StudentRow key={s.id} student={s} onError={setError} />
-            ))}
+            {filtered.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={readOnly ? 3 : 4} className="text-muted-foreground">
+                  No students match.
+                </TableCell>
+              </TableRow>
+            ) : (
+              filtered.map((s) => <StudentRow key={s.id} student={s} onError={setError} readOnly={readOnly} />)
+            )}
           </TableBody>
         </Table>
       </div>
@@ -102,7 +131,15 @@ export function StudentManager({ students }: { students: Student[] }) {
   );
 }
 
-function StudentRow({ student, onError }: { student: Student; onError: (m: string | null) => void }) {
+function StudentRow({
+  student,
+  onError,
+  readOnly = false,
+}: {
+  student: Student;
+  onError: (m: string | null) => void;
+  readOnly?: boolean;
+}) {
   const [pending, startTransition] = useTransition();
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(student.name);
@@ -116,6 +153,18 @@ function StudentRow({ student, onError }: { student: Student; onError: (m: strin
       if (!res.ok) onError(res.error ?? "Could not save");
       else setEditing(false);
     });
+  }
+
+  if (readOnly) {
+    return (
+      <TableRow>
+        <TableCell className="font-medium">{student.name}</TableCell>
+        <TableCell className="text-muted-foreground">{student.phone ?? "—"}</TableCell>
+        <TableCell>
+          <Badge variant="secondary">{student.status}</Badge>
+        </TableCell>
+      </TableRow>
+    );
   }
 
   if (!editing) {
