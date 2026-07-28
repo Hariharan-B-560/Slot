@@ -5,7 +5,8 @@ import { DeliverToday, type ClassRow } from "@/components/deliver/DeliverToday";
 
 export const dynamic = "force-dynamic";
 
-const GRACE_MS = 15 * 60 * 1000;
+// Mirrors the DB's delivery_grace() (1h30m) — keep the two in sync.
+const GRACE_MS = 90 * 60 * 1000;
 
 export default async function DeliverPage() {
   const profile = await getCurrentProfile();
@@ -60,7 +61,7 @@ export default async function DeliverPage() {
   return (
     <AppShell profile={profile} title="Today's classes" width="max-w-3xl">
       <p className="mb-4 text-sm text-muted-foreground">
-        You can file a report and deliver a class only inside its window (from start until 15 min after end). The
+        You can file a report and deliver a class only inside its window (from start until 1½ hours after end). The
         database enforces this — and requires both screenshots.
       </p>
       <DeliverToday classes={classes} />

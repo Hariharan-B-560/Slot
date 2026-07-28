@@ -23,7 +23,7 @@ function friendly(msg: string): string {
     return "This class isn't open for reporting right now (outside its window).";
   if (msg.includes("RULE 8")) return "A session report is required before delivering.";
   if (msg.includes("RULE 1") || msg.includes("no-backfill"))
-    return "You can only deliver inside the class window (from start until 15 min after end).";
+    return "You can only deliver inside the class window (from start until 1½ hours after end).";
   if (msg.includes("null value") && msg.includes("screenshot"))
     return "Both opening and closing screenshots are required.";
   return msg;
