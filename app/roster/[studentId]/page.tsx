@@ -6,6 +6,8 @@ import { AppShell } from "@/components/AppShell";
 import { PaymentsPanel, type PaymentRow, type PaymentStatus } from "@/components/roster/PaymentsPanel";
 import { PauseControl } from "@/components/roster/PauseControl";
 import { SlotChangeControl } from "@/components/roster/SlotChangeControl";
+import { ReassignTeacherControl } from "@/components/roster/ReassignTeacherControl";
+import { EditSessionsControl } from "@/components/roster/EditSessionsControl";
 import { totalSessions, remaining, type Enrolment } from "@/lib/roster";
 import { hhmm } from "@/lib/weekday";
 import { fmtIST } from "@/lib/datetime";
@@ -52,7 +54,7 @@ export default async function StudentDetailPage({
     supabase
       .from("enrolments")
       .select(
-        "id, slot_start, start_date, end_date, total_sessions, sessions_already_delivered, migrated_from_legacy, status, paused_at, teacher:profiles!enrolments_teacher_id_fkey(name)",
+        "id, slot_start, start_date, end_date, total_sessions, sessions_already_delivered, migrated_from_legacy, status, paused_at, teacher_id, teacher:profiles!enrolments_teacher_id_fkey(name)",
       )
       .eq("student_id", studentId)
       .order("start_date", { ascending: false }),
@@ -68,8 +70,18 @@ export default async function StudentDetailPage({
     status: string;
     paused_at: string | null;
     migrated_from_legacy: boolean;
+    teacher_id: string;
     teacher: { name: string } | null;
   })[];
+
+  // Active teachers for the "reassign teacher" picker (admin can read profiles).
+  const { data: teacherData } = await supabase
+    .from("profiles")
+    .select("id, name")
+    .eq("role", "teacher")
+    .eq("active", true)
+    .order("name");
+  const allTeachers = (teacherData ?? []) as { id: string; name: string }[];
   const classRows = (classes ?? []) as {
     id: string;
     enrolment_id: string | null;
@@ -185,6 +197,21 @@ export default async function StudentDetailPage({
                         currentSlot={e.slot_start}
                         student={student.name}
                         teacher={e.teacher?.name ?? "their teacher"}
+                      />
+                      <ReassignTeacherControl
+                        enrolmentId={e.id}
+                        status={e.status}
+                        currentSlot={e.slot_start}
+                        student={student.name}
+                        currentTeacher={e.teacher?.name ?? "their teacher"}
+                        teachers={allTeachers.filter((t) => t.id !== e.teacher_id)}
+                      />
+                      <EditSessionsControl
+                        enrolmentId={e.id}
+                        status={e.status}
+                        currentTotal={total}
+                        delivered={legacy + app}
+                        student={student.name}
                       />
                     </div>
 

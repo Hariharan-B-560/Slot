@@ -29,12 +29,9 @@ export default async function CounsellorAvailabilityPage() {
 
   const supabase = await createClient();
 
-  const { data: teacherData } = await supabase
-    .from("profiles")
-    .select("id, name")
-    .eq("role", "teacher")
-    .eq("active", true)
-    .order("name");
+  // profiles is admin/own-row only; this SECURITY DEFINER RPC returns just the
+  // id + name of active teachers to a counsellor (no rate/email leak).
+  const { data: teacherData } = await supabase.rpc("counsellor_teacher_list");
   const teacherList = (teacherData ?? []) as { id: string; name: string }[];
 
   const perTeacher = await Promise.all(

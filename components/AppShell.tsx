@@ -15,6 +15,7 @@ import {
   BarChart3,
   CalendarClock,
   ShieldAlert,
+  Headset,
   Menu,
   X,
 } from "lucide-react";
@@ -40,6 +41,7 @@ const ADMIN_NAV: NavItem[] = [
   { href: "/reschedules", label: "Reschedules", icon: CalendarClock },
   { href: "/students", label: "Students", icon: GraduationCap },
   { href: "/teachers", label: "Teachers", icon: UserCog },
+  { href: "/counsellors", label: "Counsellors", icon: Headset },
   { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
 ];
 const TEACHER_NAV: NavItem[] = [

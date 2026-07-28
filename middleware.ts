@@ -6,7 +6,7 @@ type CookieToSet = { name: string; value: string; options?: CookieOptions };
 // Pages reachable while signed OUT.
 const PUBLIC_PATHS = ["/login", "/forgot-password", "/reset-password"];
 // Prefixes only an admin may reach — enforced HERE, server-side, not by hiding nav.
-const ADMIN_PREFIXES = ["/verify", "/teachers", "/roster", "/dashboard", "/integrity", "/reschedules"];
+const ADMIN_PREFIXES = ["/verify", "/teachers", "/counsellors", "/roster", "/dashboard", "/integrity", "/reschedules"];
 
 function redirect(request: NextRequest, to: string, carry: NextResponse) {
   const res = NextResponse.redirect(new URL(to, request.url));
@@ -73,8 +73,10 @@ export async function middleware(request: NextRequest) {
   const counsellorArea = path === "/counsellor" || path.startsWith("/counsellor/");
 
   // Counsellors are read-only and confined to their own area. Anything else
-  // (login page while signed in, an admin/teacher route) sends them home.
+  // (login page while signed in, an admin/teacher route) sends them home —
+  // except the auth API (logout must get through).
   if (profile.role === "counsellor") {
+    if (isAuthApi) return response;
     if (!counsellorArea) return redirect(request, "/counsellor/availability", response);
     return response;
   }

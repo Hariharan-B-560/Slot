@@ -8,7 +8,7 @@
 -- =============================================================================
 
 begin;
-select plan(12);
+select plan(14);
 
 -- Sensitive rows the counsellor must NOT see (inserted as superuser, bypassing RLS).
 insert into public.payments (enrolment_id, amount, paid_at, recorded_by)
@@ -30,6 +30,10 @@ select ok((select count(*) from public.enrolments) > 0,
   'counsellor can read enrolments (slot bookings)');
 select ok((select count(*) from public.available_slots('00000000-0000-0000-0000-000000000b01', 30)) > 0,
   'counsellor can read the availability grid via available_slots ("slot taken by X")');
+select ok((select count(*) from public.counsellor_teacher_list()) > 0,
+  'counsellor gets the teacher directory (id + name) for the grid');
+select ok((select count(*) from public.enrolment_payment_status()) > 0,
+  'counsellor can read fee details (enrolment_payment_status)');
 
 -- --- CANNOT read admin/teacher-only tables (rows exist; RLS returns none) ----
 select is((select count(*)::int from public.conversion_events), 0,

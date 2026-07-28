@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getCurrentProfile } from "@/lib/current-user";
 import { AppShell } from "@/components/AppShell";
 import { VerifyCard, type VerifyCardData } from "@/components/verify/VerifyCard";
+import { RecoverMissed, type RecoverRow } from "@/components/verify/RecoverMissed";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,35 @@ export default async function VerifyPage() {
     )
     .in("status", ["delivered", "flagged"])
     .order("scheduled_start", { ascending: false });
+
+  // Recoverable: never-delivered classes whose window has passed, within the
+  // last 3 days — the candidates for an admin retro-close. The RPC enforces the
+  // exact grace + cap; this list is just the shortlist.
+  const nowISO = new Date().toISOString();
+  const threeDaysAgoISO = new Date(Date.now() - 3 * 86_400_000).toISOString();
+  const { data: recData } = await supabase
+    .from("classes")
+    .select(
+      "id, scheduled_start, status, teacher:profiles!classes_teacher_id_fkey(name), student:students(name)",
+    )
+    .in("status", ["published", "missed"])
+    .lt("scheduled_end", nowISO)
+    .gte("scheduled_start", threeDaysAgoISO)
+    .order("scheduled_start", { ascending: false });
+
+  const recoverable = ((recData ?? []) as unknown as {
+    id: string;
+    scheduled_start: string;
+    status: string;
+    teacher: { name: string } | null;
+    student: { name: string } | null;
+  }[]).map<RecoverRow>((c) => ({
+    id: c.id,
+    startISO: c.scheduled_start,
+    teacherName: c.teacher?.name ?? "—",
+    studentName: c.student?.name ?? "—",
+    status: c.status,
+  }));
 
   const rows = (data ?? []) as unknown as {
     id: string;
@@ -83,6 +113,8 @@ export default async function VerifyPage() {
         Delivered classes awaiting verification, plus flagged ones. Only an admin can verify (rule 5) — and only once
         the evidence has loaded.
       </p>
+
+      <RecoverMissed classes={recoverable} />
 
       {cards.length === 0 ? (
         <p className="rounded-lg border bg-card p-6 text-muted-foreground">Nothing to review.</p>

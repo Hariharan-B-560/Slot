@@ -35,7 +35,7 @@ export default async function IntegrityPage({
   const range = parseRange(sp);
   const supabase = await createClient();
 
-  const [byTeacher, flagged, pay] = await Promise.all([
+  const [byTeacher, flagged, pay, retro] = await Promise.all([
     supabase.rpc("integrity_by_teacher", { p_start: range.from, p_end: range.to }),
     supabase
       .from("classes")
@@ -46,10 +46,26 @@ export default async function IntegrityPage({
       .order("scheduled_start", { ascending: false })
       .limit(10),
     supabase.rpc("teacher_pay_all", { p_from: range.from, p_to: range.to }),
+    supabase
+      .from("retro_close_events")
+      .select(
+        "id, closed_at, reason, class:classes(scheduled_start, teacher:profiles!classes_teacher_id_fkey(name), student:students(name)), closer:profiles!retro_close_events_closed_by_fkey(name)",
+      )
+      .gte("closed_at", range.from)
+      .lt("closed_at", range.to + "T23:59:59")
+      .order("closed_at", { ascending: false })
+      .limit(20),
   ]);
 
   const rows = (byTeacher.data ?? []) as Row[];
   const payRows = (pay.data ?? []) as PayRow[];
+  const retroRows = (retro.data ?? []) as unknown as {
+    id: string;
+    closed_at: string;
+    reason: string;
+    class: { scheduled_start: string; teacher: { name: string } | null; student: { name: string } | null } | null;
+    closer: { name: string } | null;
+  }[];
   const flaggedRows = (flagged.data ?? []) as unknown as {
     id: string;
     scheduled_start: string;
@@ -157,6 +173,45 @@ export default async function IntegrityPage({
                   <TableCell>{c.teacher?.name ?? "—"}</TableCell>
                   <TableCell>{c.student?.name ?? "—"}</TableCell>
                   <TableCell className="text-muted-foreground">{c.flag_reason ?? "—"}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+
+      <div className="mt-8 mb-2 flex items-baseline justify-between gap-4">
+        <h2 className="text-sm font-semibold">Admin retro-closed classes</h2>
+        <span className="text-xs text-muted-foreground">Window-bypass exceptions — audit these</span>
+      </div>
+      <p className="mb-3 text-xs text-muted-foreground">
+        Classes an admin recorded as delivered &amp; verified <em>after</em> their window (teacher forgot to mark).
+        Each required evidence + a reason. They&apos;re listed here on purpose — a spike is worth a look.
+      </p>
+      {retroRows.length === 0 ? (
+        <p className="rounded-lg border bg-card p-4 text-sm text-emerald-700">No retro-closes in this range ✓</p>
+      ) : (
+        <div className="overflow-x-auto rounded-lg border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Class (IST)</TableHead>
+                <TableHead>Teacher</TableHead>
+                <TableHead>Student</TableHead>
+                <TableHead>Reason</TableHead>
+                <TableHead>Closed by</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {retroRows.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell className="tabular-nums">
+                    {r.class?.scheduled_start ? fmtIST(r.class.scheduled_start) : "—"}
+                  </TableCell>
+                  <TableCell>{r.class?.teacher?.name ?? "—"}</TableCell>
+                  <TableCell>{r.class?.student?.name ?? "—"}</TableCell>
+                  <TableCell className="text-muted-foreground">{r.reason}</TableCell>
+                  <TableCell>{r.closer?.name ?? "—"}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
